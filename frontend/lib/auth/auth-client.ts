@@ -15,7 +15,17 @@ export const authClient = {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ detail: 'Login failed' }));
-        throw new Error(errorData.detail || 'Login failed');
+        let message = 'Login failed';
+
+        if (typeof errorData.detail === 'string') {
+          message = errorData.detail;
+        } else if (Array.isArray(errorData.detail)) {
+          message = errorData.detail.map((e: any) => `${e.loc.join('.')}: ${e.msg}`).join(', ');
+        } else if (errorData.message) {
+          message = errorData.message;
+        }
+
+        throw new Error(message);
       }
 
       const result = await response.json();
