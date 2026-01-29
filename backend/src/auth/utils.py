@@ -5,6 +5,9 @@ from passlib.context import CryptContext
 from fastapi import HTTPException, status
 from ..config import settings
 from ..models.user import User
+import logging
+
+logger = logging.getLogger(__name__)
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
@@ -37,9 +40,10 @@ def verify_token(token: str) -> Optional[dict]:
         token_data = {"user_id": user_id, "email": email}
         return token_data
     except jwt.ExpiredSignatureError:
-        # Specifically catch expired tokens if needed for logging
+        logger.warning("Token expired")
         return None
-    except jwt.PyJWTError:
+    except jwt.PyJWTError as e:
+        logger.warning(f"JWT Decode Error: {str(e)}")
         return None
 
 def authenticate_user(session, email: str, password: str) -> Optional[User]:

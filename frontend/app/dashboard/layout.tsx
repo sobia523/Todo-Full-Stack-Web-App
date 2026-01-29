@@ -1,14 +1,17 @@
 'use client';
 
-import ProtectedRoute from "../../components/protected-route";
-import { useAuth } from "../../components/auth/auth-provider";
+import dynamic from 'next/dynamic';
+import { useAuth } from "@/components/auth/auth-provider";
+
+const ProtectedRoute = dynamic(() => import("../../components/protected-route"), { ssr: false });
+const LogoutButton = dynamic(() => import("../../components/auth/LogoutButton"), { ssr: false });
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { logout } = useAuth();
+  // const { logout } = useAuth(); // No longer needed here, handled by LogoutButton
 
   return (
     <ProtectedRoute>
@@ -46,15 +49,8 @@ export default function DashboardLayout({
 
                 <div className="w-[1px] h-4 bg-white/10 mx-2" />
 
-                <button
-                  onClick={() => logout()}
-                  className="px-4 py-2 rounded-xl text-sm font-semibold text-zinc-400 hover:text-red-400 hover:bg-red-400/5 transition-all flex items-center gap-2 group"
-                >
-                  <svg className="w-4 h-4 text-zinc-500 group-hover:text-red-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  <span className="hidden sm:inline">Sign Out</span>
-                </button>
+                {/* Use dynamically imported LogoutButton */}
+                <LogoutButton />
               </div>
             </div>
           </div>

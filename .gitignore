@@ -22,3 +22,14 @@ instance/
 # OS
 .DS_Store
 Thumbs.db
+
+# Deployment
+.vercel
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*

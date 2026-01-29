@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 from pydantic import ConfigDict
 
 class Settings(BaseSettings):
-    model_config = ConfigDict(extra='ignore')
+    model_config = ConfigDict(extra='ignore', env_file=".env", env_file_encoding='utf-8')
 
     better_auth_secret: str = os.getenv("BETTER_AUTH_SECRET", "your-super-secret-jwt-key-here-make-it-long-and-random")
     access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))

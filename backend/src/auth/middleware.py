@@ -8,17 +8,26 @@ from ..models.user import User
 
 import logging
 import uuid
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 logger = logging.getLogger(__name__)
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     session: Session = Depends(get_session)
 ) -> User:
+    if credentials is None:
+        print("DEBUG: No Authorization header sent! Request is missing valid 'Authorization: Bearer <token>' header.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        
     token = credentials.credentials
-
+    print(f"DEBUG: get_current_user called with token: {token[:10]}...")
     token_data = verify_token(token)
     if token_data is None:
+        print("DEBUG: Token verification failed (verify_token returned None)")
         logger.warning("Token verification failed")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -30,6 +39,7 @@ async def get_current_user(
     try:
         user_uuid = uuid.UUID(token_data["user_id"])
     except ValueError:
+        print(f"DEBUG: Invalid UUID in token: {token_data.get('user_id')}")
         logger.error(f"Invalid UUID format in token: {token_data['user_id']}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -39,6 +49,7 @@ async def get_current_user(
 
     user = session.get(User, user_uuid)
     if user is None:
+        print(f"DEBUG: User not found in DB for ID: {user_uuid}")
         logger.warning(f"User not found for ID: {user_uuid}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -47,6 +58,7 @@ async def get_current_user(
         )
 
     if not user.is_active:
+        print(f"DEBUG: User {user_uuid} is inactive")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Inactive user",

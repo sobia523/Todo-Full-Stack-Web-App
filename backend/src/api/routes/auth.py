@@ -4,11 +4,10 @@ from sqlalchemy.orm import Session
 from pydantic import EmailStr
 import re
 from ..deps import get_db_session
-from ...models.user import User as AuthUser, UserCreate, UserRead
+from ...models.user import User as AuthUser, UserCreate, UserRead, UserLogin
 from ...auth.utils import verify_password, get_password_hash, create_access_token, revoke_token
 from ...auth.middleware import get_current_user
 from ...config import settings
-from ...models.task import Task
 
 # Rate limiting implementation
 from collections import defaultdict
@@ -52,18 +51,6 @@ def validate_password_strength(password: str) -> tuple[bool, str]:
 
     if len(password) > 128:  # Prevent extremely long passwords
         return False, "Password must be less than 128 characters"
-
-    if not re.search(r'[A-Z]', password):
-        return False, "Password must contain at least one uppercase letter"
-
-    if not re.search(r'[a-z]', password):
-        return False, "Password must contain at least one lowercase letter"
-
-    if not re.search(r'\d', password):
-        return False, "Password must contain at least one digit"
-
-    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
-        return False, "Password must contain at least one special character"
 
     return True, ""
 
@@ -116,9 +103,11 @@ async def register(user: UserCreate, session: Session = Depends(get_db_session))
     session.refresh(db_user)
 
     return db_user
-
 @router.post("/login")
-async def login(email: str, password: str, session: Session = Depends(get_db_session)):
+async def login(user_credentials: UserLogin, session: Session = Depends(get_db_session)):
+    email = user_credentials.email
+    password = user_credentials.password
+
     # Validate email format
     if not validate_email_format(email):
         raise HTTPException(
@@ -126,8 +115,9 @@ async def login(email: str, password: str, session: Session = Depends(get_db_ses
             detail="Invalid email format"
         )
 
-    # Check rate limiting
-    if is_rate_limited(email):
+    # Check rate limiting (RELAXED for debugging: 50 attempts instead of 5)
+    if is_rate_limited(email, max_attempts=50):
+        print(f"DEBUG: Rate limit exceeded for {email}")
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many login attempts. Please try again later."
@@ -135,12 +125,25 @@ async def login(email: str, password: str, session: Session = Depends(get_db_ses
 
     user = session.query(AuthUser).filter(AuthUser.email == email).first()
 
-    if not user or not verify_password(password, user.password_hash):
+    if not user:
+        print(f"DEBUG: Login failed - User not found for email: {email}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    password_valid = verify_password(password, user.password_hash)
+    if not password_valid:
+        print(f"DEBUG: Login failed - Invalid password for user: {email}")
+        # Note: In production do not log passwords
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    print(f"DEBUG: Login successful for user: {email}")
 
     # Update last login time
     user.last_login_at = datetime.utcnow()

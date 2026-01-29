@@ -1,10 +1,10 @@
 export interface UserSession {
-  id: string;
-  email: string;
-  name: string;
-  isLoggedIn: boolean;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  };
   token: string;
-  tokenExpiry: Date;
 }
 
 export interface LoginCredentials {

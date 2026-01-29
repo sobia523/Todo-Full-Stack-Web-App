@@ -12,9 +12,9 @@ export class ApiClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
 
-    // Get the session to access the JWT token
-    const session = await authClient.getSession();
-    const token = session?.token;
+    // Get the session to access the JWT token - DIRECT READ FROM STORAGE
+    // We prioritize direct storage read to ensure the token is attached immediately
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth-token') : null;
 
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -23,11 +23,15 @@ export class ApiClient {
 
     // Add authorization header if user is authenticated
     if (token) {
+      console.log('Attaching token to request:', token.substring(0, 10) + '...');
       headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      console.warn('No token found in session for request to:', endpoint);
     }
 
     let response;
     try {
+      console.log(`Fetching ${url}...`);
       response = await fetch(url, {
         headers,
         ...options,

@@ -1,4 +1,5 @@
 from sqlmodel import SQLModel, Field, Relationship
+from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 import uuid
@@ -26,6 +27,12 @@ class User(UserBase, table=True):
 class UserCreate(UserBase):
     password: str
     name: str
+
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
 
 
 class UserRead(UserBase):

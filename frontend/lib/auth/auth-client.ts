@@ -5,11 +5,12 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8
 export const authClient = {
   signIn: async (credentials: LoginCredentials) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login?email=${encodeURIComponent(credentials.email)}&password=${encodeURIComponent(credentials.password)}`, {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify(credentials),
       });
 
       if (!response.ok) {
@@ -41,7 +42,14 @@ export const authClient = {
       localStorage.setItem('auth-user', JSON.stringify(user));
 
       return {
-        data: user,
+        data: {
+          user: {
+            id: data.user.id,
+            email: data.user.email,
+            name: data.user.name,
+          },
+          token: token
+        },
         success: true
       };
     } catch (error: any) {
@@ -109,27 +117,36 @@ export const authClient = {
   },
 
   getSession: async () => {
+    if (typeof window === 'undefined') return null;
+
     const token = localStorage.getItem('auth-token');
     const userStr = localStorage.getItem('auth-user');
+    let user = null;
 
-    if (token && userStr) {
+    if (userStr) {
       try {
-        const user = JSON.parse(userStr);
-        return { user, token };
+        user = JSON.parse(userStr);
       } catch {
-        return null;
+        // User data corrupted, but token might still be valid
       }
     }
+
+    if (token) {
+      return { user: user || { id: '', email: '', name: '' }, token };
+    }
+
     return null;
   },
 
   useSession: () => {
+    if (typeof window === 'undefined') return { data: null, status: 'loading' };
+
     const token = localStorage.getItem('auth-token');
     const userStr = localStorage.getItem('auth-user');
 
-    if (token && userStr) {
+    if (token) {
       try {
-        const user = JSON.parse(userStr);
+        const user = userStr ? JSON.parse(userStr) : null;
         return { data: { user }, status: 'authenticated' };
       } catch {
         return { data: null, status: 'unauthenticated' };

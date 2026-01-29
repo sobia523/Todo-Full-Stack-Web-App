@@ -99,6 +99,7 @@ export default function SignUpForm({ onSuccess, onError }: SignUpFormProps) {
                         className="bg-zinc-900/50 border-white/5 focus:border-violet-500/50 focus:ring-violet-500/20 text-white placeholder:text-zinc-600 h-12 rounded-xl transition-all"
                     />
                     {errors.password && <span className="text-red-400 text-[10px] font-medium ml-1">{String(errors.password.message)}</span>}
+                    <p className="text-[10px] text-zinc-600 ml-1">Must be at least 8 characters</p>
                 </div>
             </div>
 

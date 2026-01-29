@@ -99,19 +99,18 @@ export default function TaskDetailPage() {
                   </p>
                 )}
                 <div className="mt-4 text-sm text-gray-500">
-                  <p>Created: {new Date(task.created_at).toLocaleString()}</p>
-                  <p>Updated: {new Date(task.updated_at).toLocaleString()}</p>
+                  <p>Created: {new Date(task.createdAt).toLocaleString()}</p>
+                  <p>Updated: {new Date(task.updatedAt).toLocaleString()}</p>
                 </div>
               </div>
               <div className="flex flex-col space-y-2">
                 <button
                   onClick={handleToggleCompletion}
                   disabled={toggleTaskCompletionMutation.isPending}
-                  className={`px-4 py-2 rounded-md text-sm font-medium ${
-                    task.completed
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${task.completed
                       ? 'bg-green-100 text-green-800 hover:bg-green-200'
                       : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                  } ${toggleTaskCompletionMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    } ${toggleTaskCompletionMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {toggleTaskCompletionMutation.isPending ? 'Updating...' : task.completed ? 'Completed' : 'Mark Complete'}
                 </button>

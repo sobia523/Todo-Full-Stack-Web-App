@@ -26,6 +26,11 @@
       {
         "name": "next"
       }
+    ],
+    "plugins": [
+      {
+        "name": "next"
+      }
     ]
   },
   "include": [

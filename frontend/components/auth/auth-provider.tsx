@@ -16,61 +16,68 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any>(() => {
+  const [user, setUser] = useState<any | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true); // Initialize to true
+
+  useEffect(() => {
     if (typeof window !== 'undefined') {
+      const storedToken = localStorage.getItem('auth-token');
       const storedUser = localStorage.getItem('auth-user');
-      if (storedUser && storedUser !== 'undefined') {
+
+      if (storedToken && storedUser) {
+        setToken(storedToken);
         try {
-          return JSON.parse(storedUser);
+          setUser(JSON.parse(storedUser));
         } catch (e) {
-          return null;
+          console.error('Failed to parse stored user data', e);
+          setUser(null);
+          setToken(null);
+          localStorage.removeItem('auth-token');
+          localStorage.removeItem('auth-user');
         }
       }
     }
-    return null;
-  });
-
-  const [token, setToken] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('auth-token');
-    }
-    return null;
-  });
-
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    // Session is already initialized synchronously, just ensure isLoading is false
-    setIsLoading(false);
+    setIsLoading(false); // Set to false after initial check
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await apiClient.login({ email, password });
-      if (response.success && response.data) {
-        setToken(response.data.token);
-        setUser(response.data);
+      setIsLoading(true);
+      const result = await apiClient.login({ email, password });
+      if (result.success && result.data) {
+        setToken(result.data.token);
+        setUser(result.data.user); // Assuming result.data contains user object
+        localStorage.setItem('auth-token', result.data.token);
+        localStorage.setItem('auth-user', JSON.stringify(result.data.user));
       } else {
-        throw new Error(response.error?.message || 'Login failed');
+        throw new Error(result.error?.message || 'Login failed');
       }
     } catch (error) {
       console.error('Login error:', error);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const register = async (name: string, email: string, password: string) => {
     try {
-      const response = await apiClient.register({ name, email, password });
-      if (response.success && response.data) {
-        setToken(response.data.token);
-        setUser(response.data);
+      setIsLoading(true);
+      const result = await apiClient.register({ name, email, password });
+      if (result.success && result.data) {
+        setToken(result.data.token);
+        setUser(result.data.user); // Assuming result.data contains user object
+        localStorage.setItem('auth-token', result.data.token);
+        localStorage.setItem('auth-user', JSON.stringify(result.data.user));
       } else {
-        throw new Error(response.error?.message || 'Registration failed');
+        throw new Error(result.error?.message || 'Registration failed');
       }
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 

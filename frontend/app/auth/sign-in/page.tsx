@@ -1,7 +1,9 @@
 'use client';
 
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import SignInForm from "@/components/auth/signin-form";
+import dynamic from 'next/dynamic';
+
+const SignInForm = dynamic(() => import("@/components/auth/signin-form"), { ssr: false });
 
 export default function SignInPage() {
     return (
